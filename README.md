@@ -1,107 +1,82 @@
-# ⏰ OLED Clock Display with DS3231 RTC + Temperature + LED Breathing Animation
+/************************************************************************************
+# ⏰ OLED Clock Display with DS3231 RTC + Temperature + LED Breathing Animation
 
-A clean and minimal digital clock project using an **SSD1306 OLED**, **DS3231 RTC**, and **NeoPixel LED strip**, built with **PlatformIO**.  
-The display now alternates between **date and temperature**, and LED breathing animation has been re-enabled with a smooth non-flickering effect.
+A clean, modular digital desktop clock built on the **Arduino Nano**.
 
----
+🧩 **Modules**
+- 🖥 **SSD1306 OLED** – I²C display shows time and temperature/date alternately  
+- ⏱ **DS3231 RTC** – precise real‑time clock & on‑board temperature sensor  
+- 🔊 **DFPlayer Mini** – startup sound / audio feedback (pins 8 = RX, 9 = TX)  
+- 💡 **NeoPixel LED strip** – smooth cyan breathing animation (5 LEDs, D6)  
 
-## 🕹 Features (Current Status)
+⚙️ **Electrical Connection (5 V Safe)**
+<div class="my-4 w-full overflow-x-auto">
+<table class="min-w-full border-collapse text-sm">
+<thead>
+<tr>
+<th class="whitespace-nowrap border-b border-zinc-200 px-3 py-2 text-left text-xs font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-100 sm:px-4 sm:text-sm">Module</th>
+<th class="whitespace-nowrap border-b border-zinc-200 px-3 py-2 text-left text-xs font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-100 sm:px-4 sm:text-sm">Pin on Nano</th>
+<th class="whitespace-nowrap border-b border-zinc-200 px-3 py-2 text-left text-xs font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-100 sm:px-4 sm:text-sm">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900">
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">OLED SSD1306</td>
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">SDA → A4 / SCL → A5</td>
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">0x3C or 0x3D I²C address</td>
+</tr>
+<tr class="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900">
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">DS3231 RTC</td>
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">SDA → A4 / SCL → A5</td>
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">Shared I²C bus</td>
+</tr>
+<tr class="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900">
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">NeoPixel LED</td>
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">D6</td>
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">5 LEDs, 5 V, common GND</td>
+</tr>
+<tr class="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900">
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">DFPlayer Mini</td>
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">RX → 9 / TX → 8</td>
+<td class="px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 sm:px-4 sm:text-base">AltSoftSerial (avoid USB conflict)</td>
+</tr>
+</tbody>
+</table>
+</div>
 
-- ⏱ **Live digital clock** with blinking colon  
-- 🌡 **DS3231 on-board temperature** displayed every 15 seconds (alternates with date)  
-- 📆 **Compact day/date view** (e.g., `Fr12`)  
-- 💡 **Cyan breathing NeoPixel animation** (smooth, fixed peak flicker)  
-- 🔋 **Battery-backed RTC** keeps time when powered off  
-- 🛠 **PlatformIO project structure** with organized classes (`ClockDisplay`, `LEDAnimator`)  
+🧠 **Features**
+- Big centered time `HH:MM` with blinking colon  
+- Seconds in small font  
+- Alternating bottom line: date ↔ temperature (q15 s)  
+- NeoPixel cyan breathing light (non‑blocking)  
+- DFPlayer low‑volume startup sound (track 0001.mp3)  
+- 5 V‑safe operation for Nano VCC  
 
----
-
-## 📷 UI Layout
-
-### 🔹 **Time View (Primary)**
-- Large centered `HH:MM` with blinking colon  
-- Seconds shown small on the right  
-- Top-right alternates every 15s between:
-  - **DATE** (e.g., `Fr12`)
-  - **TEMPERATURE** (e.g., `25°C` or `25`˙`C`)  
-
-### 🔹 **Temperature/Date Alternation**
-- Toggles automatically every **15 seconds**  
-- Temperature uses DS3231 built-in thermistor and is formatted cleanly  
-
-### 🔹 **LED Animation (Idle Mode)**
-- Smooth cyan breathe effect  
-- No flicker at brightness peaks  
-- Fully encapsulated in `LEDAnimator.cpp`
-
----
-
-## 🧰 Hardware Used
-
-| Component             | Notes                         |
-|----------------------|-------------------------------|
-| Microcontroller      | Arduino Nano (ATmega328P)     |
-| Display              | SSD1306 128×64 I2C OLED       |
-| RTC Module           | DS3231 (temp + clock)         |
-| LEDs                 | WS2812b (NeoPixel, 5 LEDs)    |
-| Buzzer *(planned)*   | Active/passive                |
-| Button *(planned)*   | Snooze / mode                 |
-
-**Wiring (Nano):**
-- **I2C:** SDA → A4, SCL → A5  
-- **NeoPixel:** D6  
-- **RTC power:** 3.3V or 5V depending on module  
-
----
-
-## 📦 Dependencies (PlatformIO)
-
-```ini
-lib_deps =
-    adafruit/Adafruit BusIO
-    adafruit/Adafruit GFX Library
-    adafruit/Adafruit SSD1306
-    adafruit/RTClib
-    northernwidget/DS3231
-    adafruit/Adafruit NeoPixel
+💻 **Libraries (Arduino Library Manager / PlatformIO lib_deps)**
+Adafruit GFX Library
+Adafruit SSD1306
+RTClib (by Adafruit)
+Adafruit NeoPixel
+DFRobot DFPlayer Mini
+🧾 **Folder Structure (for PlatformIO)**
 ```
-All installed automatically through platformio.ini.
+src/ 
+├─ main.cpp 
+├─ ClockDisplay.cpp 
+├─ LEDAnimator.cpp 
+└─ AudioManager.cpp 
+include/ 
+├─ ClockDisplay.h 
+├─ LEDAnimator.h 
+└─ AudioManager.h
+```
 
-## 🔥 LED Animation System
-The LED engine is modular and supports:
-- Idle breathing mode (currently active)
-- Future modes:
-  * Alarm flashing
-  * Transition fades
-  * Multi-color effects
+**Design Goals** 
+- Modular / reusable modules with clear interfaces 
+- Non‑blocking updates using `millis()` 
+- Reliable startup sequence to avoid I²C lock and serial freeze 
+---
 
-The breathing animation was updated to remove the peak brightness flicker by clamping and reversing direction before drawing.
-
-## 🌡 Temperature Display Notes
-- Uses rtc.getTemperature()
-- DS3231 temperature updates internally every 64 seconds
-- Display format currently:
-  * 25˙C or fallback 25'C
-- Rendering position corrected to align with compact date region
-
-🚀 Roadmap
-- [x] PlatformIO migration
-- [x] OLED clock with time + seconds
-- [x] Day/date compact view
-- [x] Temperature alternating UI
-- [x] NeoPixel breathing animation (fixed)
-- [ ] LED transition modes
-- [ ] Buzzer + alarm logic
-- [ ] Snooze button input
-- [ ] PC-based settings editor
-- [ ] Animation profiles (quiet/night mode)
-- [ ] EEPROM save/load of settings
-
-## 🤝 Credits
-- Adafruit GFX & SSD1306
-- RTClib
-- DS3231 Library
-- Adafruit NeoPixel
-
-## 💡 Inspiration
-A small modular clock evolving into a full-featured smart desktop companion — ambient LEDs, alarm logic, and a clean UI.
+* Author  : Kabelo Matlakala 
+* Version : 1.0  (Stable Release — 2025‑01) 
+* License : Open Hardware / MIT ************************************************************************************
