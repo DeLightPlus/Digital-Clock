@@ -5,13 +5,14 @@
 
 class ClockDisplay {
 public:
-    ClockDisplay(Adafruit_SSD1306 &oled);
+    ClockDisplay(Adafruit_SSD1306 &oled, RTC_DS3231 &rtc);
 
     void begin();
-    void showTime(DateTime now, bool showColon = true);
+    void showTime(bool showColon = true);
 
 private:
     Adafruit_SSD1306 &display;
+    RTC_DS3231 &rtc;
 
     String dayToString(uint8_t day);
 };
