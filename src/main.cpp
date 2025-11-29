@@ -15,48 +15,56 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 RTC_DS3231 rtc;
 ClockDisplay clockUI(display, rtc);
-LEDAnimator leds(6, 5);             // pin 6, 5 LEDs
-AudioManager audio(8, 9);           // RX=8, TX=9
+LEDAnimator leds(6, 5);   // pin 6, 5 LEDs
+AudioManager audio(8, 9); // RX=8, TX=9
 
 // --- Time Blinker ---
 unsigned long lastBlink = 0;
 bool colonVisible = true;
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
   delay(500);
   Serial.println(F("Booting..."));
 
   Wire.begin();
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+  {
     Serial.println(F("OLED not detected."));
   }
 
-  if (!rtc.begin()) {
+  if (!rtc.begin())
+  {
     Serial.println(F("RTC not found."));
-    while (1);
+    while (1)
+      ;
   }
-  if (rtc.lostPower()) {
+  if (rtc.lostPower())
+  {
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     Serial.println(F("RTC reset to compile time."));
   }
 
   clockUI.begin();
   leds.begin();
-  if (audio.begin()) audio.playStartupSound();
+  if (audio.begin())
+    audio.playStartupSound();
 
   Serial.println(F("System Ready."));
 }
 
-void loop() {
+void loop()
+{
   unsigned long nowMs = millis();
 
-  if (nowMs - lastBlink >= 500) {
+  if (nowMs - lastBlink >= 500)
+  {
     colonVisible = !colonVisible;
     lastBlink = nowMs;
   }
 
-  clockUI.showTime(colonVisible);
-  leds.update();
-  delay(40);
+  clockUI.update(); // handles time/temp, blinking, everything!
+  leds.update();    // keep your LED animations
+  delay(40);        // ~25 FPS, reasonable for OLED + LEDs
 }
