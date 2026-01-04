@@ -8,18 +8,23 @@ bool AudioManager::begin() {
     mp3Serial.begin(9600);
     delay(200);
     if (!player.begin(mp3Serial)) {
-        Serial.println(F("⚠️ DFPlayer not found!"));
+        Serial.println(F("DFPlayer not found!"));
         return false;
     }
-    player.volume(5);
+    player.volume(20);
     ready = true;
     Serial.println(F("DFPlayer initialized."));
     return true;
 }
 
 void AudioManager::playStartupSound() {
+    playTrack(1);
+}
+
+void AudioManager::playTrack(uint8_t track) {
     if (ready) {
-        player.play(1);     // Play file 0001.mp3
-        Serial.println(F("Playing startup sound..."));
+        player.play(track);
+        Serial.print(F("Playing track "));
+        Serial.println(track);
     }
 }

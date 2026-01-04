@@ -1,50 +1,54 @@
-#include "DisplayManager.h"
 #include <Arduino.h>
+#include "DisplayManager.h"
 
-DisplayManager::DisplayManager(Adafruit_SSD1306 &oled, RTC_DS3231 &r)
-    : display(oled), rtc(r), clockUI(oled, r) {}
+
+DisplayManager::DisplayManager( Adafruit_SSD1306 &d,
+    RTC_DS3231 &r,
+    LEDAnimator &l,
+    AudioManager *a)
+    : display(d), rtc(r), leds(l), audio(a), boot(d, a), clockUI(d, r) {}
 
 void DisplayManager::begin() {
-    clockUI.begin();
-    currentMode = DisplayMode::Splash;
-    modeStart = millis();
-    colonVisible = true;
+    boot.begin();
+    // clockUI.begin() is called after boot completes
+    mode = DisplayMode::Boot;
+    bootPlayed = false;
+}
+
+void DisplayManager::setMode(DisplayMode newMode) {
+    mode = newMode;
 }
 
 void DisplayManager::update() {
     unsigned long nowMs = millis();
 
-    // Splash → Clock after 3 s
-    if (currentMode == DisplayMode::Splash && nowMs - modeStart > 3000) {
-        currentMode = DisplayMode::Clock;
-    }
-
-    // Blink colon for all modes
+    // Colon blink (used by clock)
     if (nowMs - lastColonBlink > 500) {
         colonVisible = !colonVisible;
         lastColonBlink = nowMs;
     }
 
-    switch (currentMode) {
-        case DisplayMode::Splash:
-            showSplash();
+    switch (mode) {
+        case DisplayMode::Boot:
+            if (!bootPlayed) {
+                boot.play();      // blocking - plays boot animation with audio
+                bootPlayed = true;
+                clockUI.begin();  // Init clock UI after boot completes
+                mode = DisplayMode::Clock;
+            }
             break;
 
         case DisplayMode::Clock:
-            // clockUI.update(colonVisible);
+            clockUI.update();
+            break;    
+
+        case DisplayMode::Alarm:
+            // future
             break;
 
-        // placeholders for expansion
-        case DisplayMode::Alarm:     /* ... */ break;
-        case DisplayMode::Settings:  /* ... */ break;
+        case DisplayMode::Settings:
+            // future
+            break;
     }
 }
 
-void DisplayManager::showSplash() {
-    display.clearDisplay();
-    display.setTextColor(SSD1306_WHITE);
-    display.setTextSize(2);
-    display.setCursor(20, 24);
-    display.println(F("Smart Clock"));
-    display.display();
-}

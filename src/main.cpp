@@ -3,7 +3,7 @@
 #include <Adafruit_SSD1306.h>
 #include <RTClib.h>
 
-#include "ClockDisplay.h"
+#include "DisplayManager.h"
 #include "LEDAnimator.h"
 #include "AudioManager.h"
 
@@ -14,57 +14,69 @@
 // --- Hardware Objects ---
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 RTC_DS3231 rtc;
-ClockDisplay clockUI(display, rtc);
 LEDAnimator leds(6, 5);   // pin 6, 5 LEDs
-AudioManager audio(8, 9); // RX=8, TX=9
-
-// --- Time Blinker ---
-unsigned long lastBlink = 0;
-bool colonVisible = true;
+AudioManager audio(10, 11); // RX=10, TX=11
+DisplayManager displayManager(display, rtc, leds, &audio);
 
 void setup()
 {
-  Serial.begin(9600);
-  delay(500);
-  Serial.println(F("Booting..."));
+    Serial.begin(9600);
+    delay(300);
+    Serial.println(F("InspectiGO Booting..."));
 
-  Wire.begin();
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
-  {
-    Serial.println(F("OLED not detected."));
-  }
+    // =============================
+    // 1️⃣ CRITICAL HARDWARE INIT
+    // =============================
+    Wire.begin();
 
-  if (!rtc.begin())
-  {
-    Serial.println(F("RTC not found."));
-    while (1)
-      ;
-  }
-  if (rtc.lostPower())
-  {
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    Serial.println(F("RTC reset to compile time."));
-  }
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+    {
+        Serial.println(F("OLED not detected"));
+        while (true);
+    }
 
-  clockUI.begin();
-  leds.begin();
-  if (audio.begin())
-    audio.playStartupSound();
+    // Improve contrast (important on 3.3V)
+    display.ssd1306_command(SSD1306_SETCONTRAST);
+    display.ssd1306_command(0xFF);
 
-  Serial.println(F("System Ready."));
+    display.clearDisplay();
+    display.display();
+
+    // LEDs are safe to init early (visual feedback)
+    leds.begin();
+
+    // =============================
+    // 2️⃣ RTC INIT
+    // =============================
+    if (!rtc.begin())
+    {
+        Serial.println(F("RTC not found"));
+        while (true);
+    }
+
+    if (rtc.lostPower())
+    {
+        rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+        Serial.println(F("RTC reset to compile time"));
+    }
+
+    // =============================
+    // 3️⃣ AUDIO INIT (no playback yet)
+    // =============================
+    audio.begin();  // Initialize only - audio triggers happen in BootDisplay
+
+    // =============================
+    // 4️⃣ START DISPLAY MANAGER
+    // =============================
+    displayManager.begin();  // Sets mode to Boot, boot animation will play in loop()
+
+    Serial.println(F("System Ready"));
 }
 
 void loop()
 {
-  unsigned long nowMs = millis();
-
-  if (nowMs - lastBlink >= 500)
-  {
-    colonVisible = !colonVisible;
-    lastBlink = nowMs;
-  }
-
-  clockUI.update(); // handles time/temp, blinking, everything!
-  leds.update();    // keep your LED animations
-  delay(40);        // ~25 FPS, reasonable for OLED + LEDs
+    displayManager.update(); // Handles boot → clock transition
+    leds.update();           // Breathing animation in clock mode
+    delay(40);               // ~25 FPS
 }
+
