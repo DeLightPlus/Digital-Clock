@@ -7,11 +7,11 @@ ClockDisplay::ClockDisplay(Adafruit_SSD1306 &oled, RTC_DS3231 &r)
 void ClockDisplay::begin() {
     display.clearDisplay();
     display.setTextColor(SSD1306_WHITE);
-
-    // Draw time once at startup (colon visible)
-    drawTimeMain();
-    drawHeader();
-    display.display(); // full refresh on boot
+    
+    // Draw time and date once
+    drawTime();
+    drawDate();
+    display.display();
 }
 
 const __FlashStringHelper* ClockDisplay::dayToString(uint8_t day) {
@@ -25,92 +25,67 @@ const __FlashStringHelper* ClockDisplay::dayToString(uint8_t day) {
     return F("??");
 }
 
-void ClockDisplay::drawTimeMain() {
+void ClockDisplay::drawTime() {
     DateTime now = rtc.now();
-
-    // Clear only the time area if needed? Or just redraw — it's stable.
-    // We'll redraw time only when colon changes or on boot.
+    
     display.setTextSize(3);
     char timeBuf[6];
     snprintf(timeBuf, sizeof(timeBuf), "%02d%c%02d",
              now.hour(), colonVisible ? ':' : ' ', now.minute());
-    display.setCursor(8, 30);
+    display.setCursor(TIME_X, TIME_Y);
     display.print(timeBuf);
 
     display.setTextSize(2);
     char secBuf[3];
     snprintf(secBuf, sizeof(secBuf), "%02d", now.second());
-    display.setCursor(100, 36);
+    display.setCursor(SEC_X, SEC_Y);
     display.print(secBuf);
 }
 
-void ClockDisplay::drawHeader() {
-    // Erase header area first
-    display.fillRect(HEADER_X, HEADER_Y, HEADER_W, HEADER_H, SSD1306_BLACK);
-
+void ClockDisplay::drawDate() {
+    DateTime now = rtc.now();
+    
     display.setTextSize(2);
-    display.setCursor(HEADER_X, HEADER_Y);
-
-    if (currentHeaderMode == TEMP_HEADER) {
-        float tempC = rtc.getTemperature();
-        display.print(tempC, 0); // no decimal for compactness
-        display.print(F("C"));   // saves space vs "°C"
-    } else {
-        DateTime now = rtc.now();
-        display.print(dayToString(now.dayOfTheWeek()));
-        if (now.day() < 10) display.print('0');
-        display.print(now.day());
-    }
+    display.setCursor(DATE_X, DATE_Y);
+    display.print(dayToString(now.dayOfTheWeek()));
+    if (now.day() < 10) display.print('0');
+    display.print(now.day());
 }
 
 void ClockDisplay::update() {
     unsigned long now = millis();
-    DateTime rtcNow = rtc.now();
-    int currentSecond = rtcNow.second();
+    DateTime nowRTC = rtc.now();
 
-    // --- Handle slideshow timing ---
-    bool shouldShowTemp = (currentSecond % TEMP_INTERVAL_SEC == 0);
-    bool inTempPhase = (now - lastTempSwitch < TEMP_DURATION_MS);
-
-    Mode newMode = shouldShowTemp && inTempPhase ? TEMP_HEADER : TIME_HEADER;
-
-    if (newMode != currentHeaderMode) {
-        currentHeaderMode = newMode;
-        if (newMode == TEMP_HEADER) {
-            lastTempSwitch = now; // reset timer when entering temp
-        }
-        drawHeader();
-        display.display(); // partial update: only header changed
-        return; // no need to update time yet
+    // Update seconds every second
+    if (now - lastSecond >= 1000) {
+        lastSecond = now;
+        
+        // Clear and redraw seconds area
+        display.fillRect(SEC_X, SEC_Y, 20, 16, SSD1306_BLACK);
+        display.setTextSize(2);
+        char secBuf[3];
+        snprintf(secBuf, sizeof(secBuf), "%02d", nowRTC.second());
+        display.setCursor(SEC_X, SEC_Y);
+        display.print(secBuf);
+        
+        display.display();
     }
 
-    // --- Handle colon blinking (only if mode is TIME) ---
-    if (currentHeaderMode == TIME_HEADER) {
-        if (now - lastColonToggle >= 500) {
-            colonVisible = !colonVisible;
-            lastColonToggle = now;
-
-            // Only redraw time area (not header)
-            // But Adafruit_GFX doesn't support "dirty rectangles" natively,
-            // so we clear & redraw time section manually.
-            display.fillRect(0, 30, 128, 34, SSD1306_BLACK); // clear time+seconds area
-            drawTimeMain();
-            display.display(); // partial update of lower part
-            return;
-        }
-
-        // Also update seconds every second (optional but recommended)
-        static uint8_t lastSecond = 99;
-        if (rtcNow.second() != lastSecond) {
-            lastSecond = rtcNow.second();
-            display.fillRect(100, 36, 20, 16, SSD1306_BLACK); // clear seconds area
-            display.setTextSize(2);
-            char secBuf[3];
-            snprintf(secBuf, sizeof(secBuf), "%02d", rtcNow.second());
-            display.setCursor(100, 36);
-            display.print(secBuf);
-            display.display();
-            return;
-        }
+    // Toggle colon every 500ms
+    if (now - lastColonToggle >= 500) {
+        lastColonToggle = now;
+        colonVisible = !colonVisible;
+        
+        // Clear and redraw time (HH:MM)
+        display.fillRect(TIME_X, TIME_Y, 92, 30, SSD1306_BLACK);
+        display.setTextSize(3);
+        char timeBuf[6];
+        snprintf(timeBuf, sizeof(timeBuf), "%02d%c%02d",
+                 nowRTC.hour(), colonVisible ? ':' : ' ', nowRTC.minute());
+        display.setCursor(TIME_X, TIME_Y);
+        display.print(timeBuf);
+        
+        display.display();
     }
 }
+

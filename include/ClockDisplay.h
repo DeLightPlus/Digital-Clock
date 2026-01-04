@@ -7,29 +7,26 @@ class ClockDisplay {
 public:
     ClockDisplay(Adafruit_SSD1306 &oled, RTC_DS3231 &rtc);
     void begin();
-    void update(); // handles blinking + slideshow (partial update)
+    void update(); // handles blinking and seconds update
 
 private:
     Adafruit_SSD1306 &display;
     RTC_DS3231 &rtc;
 
-    enum Mode { TIME_HEADER, TEMP_HEADER };
-    Mode currentHeaderMode = TIME_HEADER;
-
-    unsigned long lastTempSwitch = 0;
-    unsigned long lastColonToggle = 0;
     bool colonVisible = true;
+    unsigned long lastColonToggle = 0;
+    unsigned long lastSecond = 0;
 
-    static constexpr unsigned long TEMP_DURATION_MS = 5000;
-    static constexpr unsigned long TEMP_INTERVAL_SEC = 15;
+    // Display regions
+    static constexpr int TIME_X = 8;
+    static constexpr int TIME_Y = 30;
+    static constexpr int SEC_X = 100;
+    static constexpr int SEC_Y = 36;
+    static constexpr int DATE_X = 75;
+    static constexpr int DATE_Y = 0;
 
-    // Header region bounds (adjust if needed)
-    static constexpr int HEADER_X = 75;
-    static constexpr int HEADER_Y = 0;
-    static constexpr int HEADER_W = 53; // 128 - 75 = 53px wide
-    static constexpr int HEADER_H = 16; // text size 2 → ~16px tall
-
-    void drawTimeMain();      // draws HH:MM:ss (once, unless colon changes)
-    void drawHeader();        // draws only Sa29 or 30°C
+    void drawTime();
+    void drawDate();
     const __FlashStringHelper* dayToString(uint8_t day);
 };
+
