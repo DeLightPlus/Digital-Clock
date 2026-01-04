@@ -16,8 +16,8 @@ void setup() {
   }
 
   Serial.println("DFPlayer OK!");
-  player.volume(20);  // 0-30
-  player.play(1);     // Plays 0001.mp3
+  player.volume(30);  // 0-30
+  player.play(2);     // Plays 0001.mp3
 }
 
 void loop() {

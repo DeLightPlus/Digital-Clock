@@ -1,31 +1,47 @@
 #pragma once
+#include <Adafruit_SSD1306.h>
 #include <RTClib.h>
-#include "ClockDisplay.h"
 
-// Enum for different display modes
-enum class DisplayMode {
-    Splash,
+#include "BootDisplay.h"
+#include "ClockDisplay.h"
+#include "LEDAnimator.h"
+#include "AudioManager.h"
+
+enum class DisplayMode
+{
+    Boot,
     Clock,
     Alarm,
     Settings
 };
 
-class DisplayManager {
+class DisplayManager
+{
 public:
-    DisplayManager(Adafruit_SSD1306 &oled, RTC_DS3231 &rtc);
+    DisplayManager(
+        Adafruit_SSD1306 &display,
+        RTC_DS3231 &rtc,
+        LEDAnimator &leds,
+        AudioManager *audio = nullptr);
 
     void begin();
     void update();
 
+    void setMode(DisplayMode mode);
+
 private:
     Adafruit_SSD1306 &display;
     RTC_DS3231 &rtc;
+
+    LEDAnimator &leds;
+    AudioManager *audio;
+
+    BootDisplay boot;
     ClockDisplay clockUI;
 
-    DisplayMode currentMode = DisplayMode::Splash;
-    unsigned long modeStart = 0;
+    DisplayMode mode = DisplayMode::Boot;
+
+    bool bootPlayed = false;
     bool colonVisible = true;
     unsigned long lastColonBlink = 0;
-
-    void showSplash();
 };
