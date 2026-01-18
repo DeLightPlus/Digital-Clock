@@ -1,16 +1,17 @@
 #include <Arduino.h>
 #include "DisplayManager.h"
 
-
-DisplayManager::DisplayManager( Adafruit_SSD1306 &d,
+DisplayManager::DisplayManager(
+    Adafruit_SSD1306 &d,
     RTC_DS3231 &r,
     LEDAnimator &l,
-    AudioManager *a)
-    : display(d), rtc(r), leds(l), audio(a), boot(d, a), clockUI(d, r) {}
+    FeedbackManager *fb)
+    : display(d), rtc(r), leds(l), feedback(fb), boot(d), clockUI(d, r) {}
 
 void DisplayManager::begin() {
     boot.begin();
-    // clockUI.begin() is called after boot completes
+    // Don't initialize clockUI here - boot animation will clear the display
+    // Clock will be initialized after boot completes
     mode = DisplayMode::Boot;
     bootPlayed = false;
 }
@@ -31,16 +32,29 @@ void DisplayManager::update() {
     switch (mode) {
         case DisplayMode::Boot:
             if (!bootPlayed) {
-                boot.play();      // blocking - plays boot animation with audio
+                Serial.println(F("🎬 Starting boot animation..."));
+
+                // Play boot feedback at start of boot
+                if (feedback) {
+                    feedback->playBootTone();
+                }
+
+                boot.play();      // blocking (for now, by design)
                 bootPlayed = true;
-                clockUI.begin();  // Init clock UI after boot completes
+
+                Serial.println(F("✅ Boot animation complete"));
+
+                // Initialize clock UI after boot animation completes
+                clockUI.begin();
+
                 mode = DisplayMode::Clock;
+                Serial.println(F("🔄 Transitioning to Clock mode"));
             }
             break;
 
         case DisplayMode::Clock:
             clockUI.update();
-            break;    
+            break;
 
         case DisplayMode::Alarm:
             // future

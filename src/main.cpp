@@ -5,7 +5,7 @@
 
 #include "DisplayManager.h"
 #include "LEDAnimator.h"
-#include "AudioManager.h"
+#include "FeedbackManager.h"
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -15,8 +15,8 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 RTC_DS3231 rtc;
 LEDAnimator leds(6, 5);   // pin 6, 5 LEDs
-AudioManager audio(10, 11); // RX=10, TX=11
-DisplayManager displayManager(display, rtc, leds, &audio);
+FeedbackManager feedback(3, 11);  // buzzer=3, vibrator=11
+DisplayManager displayManager(display, rtc, leds, &feedback);
 
 void setup()
 {
@@ -61,9 +61,9 @@ void setup()
     }
 
     // =============================
-    // 3️⃣ AUDIO INIT (no playback yet)
+    // 3️⃣ FEEDBACK INIT (buzzer + vibrator)
     // =============================
-    audio.begin();  // Initialize only - audio triggers happen in BootDisplay
+    feedback.begin();
 
     // =============================
     // 4️⃣ START DISPLAY MANAGER
@@ -77,6 +77,7 @@ void loop()
 {
     displayManager.update(); // Handles boot → clock transition
     leds.update();           // Breathing animation in clock mode
+    feedback.update();       // Non-blocking vibration handling
     delay(40);               // ~25 FPS
 }
 

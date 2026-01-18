@@ -5,8 +5,8 @@
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
-BootDisplay::BootDisplay(Adafruit_SSD1306 &oled, AudioManager *audioManager)
-    : display(oled), audio(audioManager) {}
+BootDisplay::BootDisplay(Adafruit_SSD1306 &oled)
+    : display(oled) {}
 
 void BootDisplay::begin() {
     finished = false;
@@ -19,11 +19,6 @@ bool BootDisplay::isFinished() const {
 void BootDisplay::play() {
     int cx = SCREEN_WIDTH / 2;
     int cy = SCREEN_HEIGHT / 2;
-
-    // Play init sound at boot start
-    if (audio) {
-        audio->playTrack(1);  // Track 1: Init sound
-    }
 
     display.clearDisplay();
     display.display();
@@ -61,11 +56,7 @@ void BootDisplay::play() {
 
     delay(600);
 
-    // 4️⃣ White flash - Play flash sound here
-    if (audio) {
-        audio->playTrack(2);  // Track 2: Flash sound
-    }
-    
+    // 4️⃣ White flash
     display.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SSD1306_WHITE);
     display.display();
     delay(1000);

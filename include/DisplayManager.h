@@ -5,7 +5,7 @@
 #include "BootDisplay.h"
 #include "ClockDisplay.h"
 #include "LEDAnimator.h"
-#include "AudioManager.h"
+#include "FeedbackManager.h"
 
 enum class DisplayMode
 {
@@ -22,7 +22,7 @@ public:
         Adafruit_SSD1306 &display,
         RTC_DS3231 &rtc,
         LEDAnimator &leds,
-        AudioManager *audio = nullptr);
+        FeedbackManager *feedback = nullptr);
 
     void begin();
     void update();
@@ -34,7 +34,7 @@ private:
     RTC_DS3231 &rtc;
 
     LEDAnimator &leds;
-    AudioManager *audio;
+    FeedbackManager *feedback;
 
     BootDisplay boot;
     ClockDisplay clockUI;
@@ -45,3 +45,4 @@ private:
     bool colonVisible = true;
     unsigned long lastColonBlink = 0;
 };
+
