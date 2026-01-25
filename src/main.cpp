@@ -11,6 +11,7 @@
 #include <Arduino.h>
 #include "config.h"
 #include "DisplayManager.h"
+#include "DisplaySettings.h"
 #include "ClockManager.h"
 #include "rtc_time.h"
 #include "leds.h"
@@ -29,6 +30,9 @@ void setup() {
   initRTC();
   initLEDs();
   initClockManager();
+  
+  // Initialize display settings (time/date format preferences)
+  initDisplaySettings();
 
   // Show startup animation
   showLoader();

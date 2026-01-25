@@ -1,6 +1,7 @@
 // WebManager.cpp - WiFi AP and REST API server with web-based provisioning
 #include "WebManager.h"
 #include "DisplayManager.h"
+#include "DisplaySettings.h"
 #include "ClockManager.h"
 #include "rtc_time.h"
 #include "config.h"
@@ -10,6 +11,7 @@
 #include <WiFi.h>
 #include <Preferences.h>
 #include <ArduinoJson.h>
+#include <BluetoothSerial.h>
 
 // External variables
 extern String lastNotification;
@@ -31,6 +33,10 @@ const unsigned long WIFI_CHECK_INTERVAL = 5000;  // Check every 5 seconds
 
 // Web server
 WiFiServer webServer(80);
+
+// Bluetooth Serial
+BluetoothSerial SerialBT;
+static bool bluetoothEnabled = false;
 
 void initWebServer() {
   Serial.println("\n=== Initializing iGO-Buddy WiFi System ===");
@@ -111,6 +117,17 @@ void initWebServer() {
   apActive = true;
   Serial.println("✓ HTTP server running on port 80");
   
+  // Step 5: Start Bluetooth Serial
+  Serial.println("\nStep 5: Starting Bluetooth...");
+  if (SerialBT.begin("iGO-Buddy")) {
+    bluetoothEnabled = true;
+    Serial.println("✓ Bluetooth Serial active");
+    Serial.println("  Name: iGO-Buddy");
+    Serial.println("  Connect via Bluetooth terminal app");
+  } else {
+    Serial.println("⚠ Bluetooth initialization failed");
+  }
+  
   if (!hasStoredConfig) {
     Serial.println("\n⚠ WiFi Setup Required!");
     Serial.println("  Connect to: " + savedAPName);
@@ -120,6 +137,52 @@ void initWebServer() {
 }
 
 void updateWebServer() {
+  // Handle Bluetooth Serial commands
+  if (bluetoothEnabled && SerialBT.available()) {
+    String btCommand = SerialBT.readStringUntil('\n');
+    btCommand.trim();
+    
+    Serial.println("BT Command: " + btCommand);
+    
+    // Process simple text commands
+    if (btCommand.startsWith("TIME:")) {
+      int format = btCommand.substring(5).toInt();
+      if (format == 12 || format == 24) {
+        setTimeFormat(format == 12 ? TIME_12H : TIME_24H);
+        SerialBT.println("OK: Time format set to " + String(format) + "-hour");
+      } else {
+        SerialBT.println("ERROR: Use TIME:12 or TIME:24");
+      }
+    }
+    else if (btCommand.startsWith("DATE:")) {
+      int format = btCommand.substring(5).toInt();
+      if (format >= 0 && format <= 3) {
+        setDateFormat((DateFormat)format);
+        const char* formats[] = {"DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD", "Day Name"};
+        SerialBT.println("OK: Date format set to " + String(formats[format]));
+      } else {
+        SerialBT.println("ERROR: Use DATE:0 to DATE:3");
+      }
+    }
+    else if (btCommand == "STATUS") {
+      SerialBT.println("=== iGO-Buddy Status ===");
+      SerialBT.println("WiFi: " + String(isHomeWiFiConnected() ? "Connected" : "AP Only"));
+      SerialBT.println("IP: " + (isHomeWiFiConnected() ? getHomeWiFiIP() : getAPIP()));
+      SerialBT.println("Time Format: " + String(getTimeFormat() == TIME_12H ? "12-hour" : "24-hour"));
+      SerialBT.println("Date Format: " + String((int)getDateFormat()));
+    }
+    else if (btCommand == "HELP") {
+      SerialBT.println("=== iGO-Buddy Commands ===");
+      SerialBT.println("TIME:12 or TIME:24 - Set time format");
+      SerialBT.println("DATE:0-3 - Set date format");
+      SerialBT.println("STATUS - Show system status");
+      SerialBT.println("HELP - Show this help");
+    }
+    else {
+      SerialBT.println("ERROR: Unknown command. Send HELP for commands.");
+    }
+  }
+  
   // Check for incoming HTTP client
   WiFiClient client = webServer.available();
   if (!client) {
@@ -249,6 +312,78 @@ void updateWebServer() {
     client.print("{\"success\":true,\"message\":\"WiFi config cleared\"}");
     
     Serial.println("✓ WiFi config cleared!");
+  }
+  else if (request.indexOf("POST /api/settings/time-format") > -1) {
+    // Set time format (12h/24h)
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, body);
+    
+    if (!error && doc.containsKey("format")) {
+      int format = doc["format"].as<int>();
+      if (format == 0 || format == 1) {
+        setTimeFormat((TimeFormat)format);
+        
+        client.print("HTTP/1.1 200 OK\r\n");
+        client.print("Content-Type: application/json\r\n");
+        client.print("Connection: close\r\n\r\n");
+        client.print("{\"success\":true,\"message\":\"Time format updated\"}");
+        
+        Serial.print("✓ Time format set to: ");
+        Serial.println(format == 1 ? "12-hour" : "24-hour");
+      } else {
+        client.print("HTTP/1.1 400 Bad Request\r\n");
+        client.print("Content-Type: application/json\r\n");
+        client.print("Connection: close\r\n\r\n");
+        client.print("{\"success\":false,\"message\":\"Invalid format value\"}");
+      }
+    } else {
+      client.print("HTTP/1.1 400 Bad Request\r\n");
+      client.print("Content-Type: application/json\r\n");
+      client.print("Connection: close\r\n\r\n");
+      client.print("{\"success\":false,\"message\":\"Invalid JSON\"}");
+    }
+  }
+  else if (request.indexOf("POST /api/settings/date-format") > -1) {
+    // Set date format
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, body);
+    
+    if (!error && doc.containsKey("format")) {
+      int format = doc["format"].as<int>();
+      if (format >= 0 && format <= 3) {
+        setDateFormat((DateFormat)format);
+        
+        client.print("HTTP/1.1 200 OK\r\n");
+        client.print("Content-Type: application/json\r\n");
+        client.print("Connection: close\r\n\r\n");
+        client.print("{\"success\":true,\"message\":\"Date format updated\"}");
+        
+        Serial.print("✓ Date format set to: ");
+        Serial.println(format);
+      } else {
+        client.print("HTTP/1.1 400 Bad Request\r\n");
+        client.print("Content-Type: application/json\r\n");
+        client.print("Connection: close\r\n\r\n");
+        client.print("{\"success\":false,\"message\":\"Invalid format value\"}");
+      }
+    } else {
+      client.print("HTTP/1.1 400 Bad Request\r\n");
+      client.print("Content-Type: application/json\r\n");
+      client.print("Connection: close\r\n\r\n");
+      client.print("{\"success\":false,\"message\":\"Invalid JSON\"}");
+    }
+  }
+  else if (request.indexOf("GET /api/settings") > -1) {
+    // Get current settings
+    String json = "{";
+    json += "\"time_format\":" + String((int)getTimeFormat()) + ",";
+    json += "\"date_format\":" + String((int)getDateFormat());
+    json += "}";
+    
+    client.print("HTTP/1.1 200 OK\r\n");
+    client.print("Content-Type: application/json\r\n");
+    client.print("Connection: close\r\n\r\n");
+    client.print(json);
   }
   else if (request.indexOf("GET /api/notify") > -1) {
     // Send notification

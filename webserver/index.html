@@ -188,6 +188,20 @@
             <div class="event-time">15 minutes from now</div>
         </div>
         
+        <div class="event-card">
+            <h3>⚙️ Display Settings</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <button class="btn-notify" onclick="setTimeFormat(0)" style="flex: 1">24-Hour</button>
+                <button class="btn-notify" onclick="setTimeFormat(1)" style="flex: 1">12-Hour</button>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn-alarm" onclick="setDateFormat(0)" style="flex: 1">DD/MM/YYYY</button>
+                <button class="btn-alarm" onclick="setDateFormat(1)" style="flex: 1">MM/DD/YYYY</button>
+                <button class="btn-alarm" onclick="setDateFormat(2)" style="flex: 1">YYYY-MM-DD</button>
+                <button class="btn-alarm" onclick="setDateFormat(3)" style="flex: 1">Day Name</button>
+            </div>
+        </div>
+        
         <div class="controls">
             <button class="btn-notify" onclick="sendNotify()">Send Notification</button>
             <button class="btn-alarm" onclick="sendAlarm()">Test Alarm</button>
@@ -205,6 +219,41 @@
                 .then(response => response.text())
                 .then(() => alert('Notification sent to TFT!'))
                 .catch(error => alert('Error: ' + error));
+        }
+        
+        function setTimeFormat(format) {
+            fetch('/api/settings/time-format', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({format: format})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Time format updated to: ' + (format === 1 ? '12-hour (AM/PM)' : '24-hour'));
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => alert('Error: ' + error));
+        }
+        
+        function setDateFormat(format) {
+            const formats = ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'Day Name'];
+            fetch('/api/settings/date-format', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({format: format})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Date format updated to: ' + formats[format]);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => alert('Error: ' + error));
         }
         
         function sendAlarm() {
