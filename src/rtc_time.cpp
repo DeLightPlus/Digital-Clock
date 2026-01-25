@@ -54,6 +54,7 @@ bool isRTCAvailable() {
 }
 
 void displayRTCStatus() {
+  // This function is now deprecated - use displayWiFiStatus in WebManager instead
   Adafruit_ST7789& tft = getTFT();
   tft.setTextColor(ST77XX_GREEN, ST77XX_BLACK);
   tft.setTextSize(1);

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Setup - iGO-Buddy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 30px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .network-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .network-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .network-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .network-item.selected {
+            background: #667eea;
+            color: white;
+        }
+        
+        .signal-strength {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📶 WiFi Setup</h1>
+            <p>Configure iGO-Buddy Network</p>
+        </div>
+        
+        <div class="form-group">
+            <label>Available Networks</label>
+            <button class="btn-secondary" onclick="scanNetworks()">Scan for Networks</button>
+            <div class="network-list" id="networkList">
+                <div class="loading">Click "Scan for Networks" to find WiFi</div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="ssid">WiFi Network Name (SSID)</label>
+            <input type="text" id="ssid" placeholder="Enter network name" />
+        </div>
+        
+        <div class="form-group">
+            <label for="password">WiFi Password</label>
+            <input type="password" id="password" placeholder="Enter password" />
+        </div>
+        
+        <div class="form-group">
+            <label for="apName">iGO-Buddy AP Name (Optional)</label>
+            <input type="text" id="apName" placeholder="iGO-Buddy" value="iGO-Buddy" />
+        </div>
+        
+        <button class="btn-primary" onclick="saveWiFiConfig()">Save & Restart</button>
+        <button class="btn-secondary" onclick="clearConfig()">Clear Saved WiFi</button>
+        
+        <div class="status" id="status"></div>
+    </div>
+    
+    <script>
+        let selectedNetwork = null;
+        
+        function scanNetworks() {
+            const list = document.getElementById('networkList');
+            list.innerHTML = '<div class="loading">Scanning...</div>';
+            
+            fetch('/api/wifi/scan')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.networks && data.networks.length > 0) {
+                        list.innerHTML = '';
+                        data.networks.forEach(network => {
+                            const item = document.createElement('div');
+                            item.className = 'network-item';
+                            item.innerHTML = `
+                                <span>${network.ssid}</span>
+                                <span class="signal-strength">${network.rssi} dBm</span>
+                            `;
+                            item.onclick = () => selectNetwork(network.ssid, item);
+                            list.appendChild(item);
+                        });
+                    } else {
+                        list.innerHTML = '<div class="loading">No networks found</div>';
+                    }
+                })
+                .catch(error => {
+                    list.innerHTML = '<div class="loading">Scan failed. Try again.</div>';
+                    console.error('Scan error:', error);
+                });
+        }
+        
+        function selectNetwork(ssid, element) {
+            // Remove previous selection
+            document.querySelectorAll('.network-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Select new network
+            element.classList.add('selected');
+            document.getElementById('ssid').value = ssid;
+            selectedNetwork = ssid;
+        }
+        
+        function saveWiFiConfig() {
+            const ssid = document.getElementById('ssid').value;
+            const password = document.getElementById('password').value;
+            const apName = document.getElementById('apName').value || 'iGO-Buddy';
+            
+            if (!ssid) {
+                showStatus('Please enter WiFi network name', 'error');
+                return;
+            }
+            
+            const config = {
+                ssid: ssid,
+                password: password,
+                ap_name: apName
+            };
+            
+            showStatus('Saving configuration...', 'info');
+            
+            fetch('/api/wifi/configure', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showStatus('WiFi configured! ESP32 will restart in 3 seconds...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 3000);
+                } else {
+                    showStatus('Failed to save configuration', 'error');
+                }
+            })
+            .catch(error => {
+                showStatus('Error: ' + error.message, 'error');
+            });
+        }
+        
+        function clearConfig() {
+            if (!confirm('Clear all saved WiFi settings?')) {
+                return;
+            }
+            
+            fetch('/api/wifi/reset', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showStatus('WiFi settings cleared!', 'success');
+                        document.getElementById('ssid').value = '';
+                        document.getElementById('password').value = '';
+                    }
+                })
+                .catch(error => {
+                    showStatus('Error: ' + error.message, 'error');
+                });
+        }
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+            status.style.display = 'block';
+            
+            if (type !== 'info') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // Auto-scan on load
+        window.onload = () => {
+            setTimeout(scanNetworks, 500);
+        };
+    </script>
+</body>
+</html>

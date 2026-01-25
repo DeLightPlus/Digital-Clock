@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iGO-Buddy Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: white;
+    }
+    .container { max-width: 600px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 30px; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+    .card {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+    .status-item { text-align: center; }
+    .status-value { font-size: 2em; font-weight: bold; margin: 10px 0; }
+    .status-label { font-size: 0.9em; opacity: 0.8; }
+    .event-box { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; text-align: center; }
+    .countdown { font-size: 3em; font-weight: bold; color: #ffd700; }
+    button {
+      width: 100%;
+      padding: 15px;
+      margin: 10px 0;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.4);
+      color: white;
+      font-size: 1.1em;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    button:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+    button:active { transform: translateY(0); }
+    .notification { background: rgba(255,215,0,0.2); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 iGO-Buddy</h1>
+    
+    <div class="card">
+      <div class="status-grid">
+        <div class="status-item">
+          <div class="status-label">Battery</div>
+          <div class="status-value" id="battery">--</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Status</div>
+          <div class="status-value" id="charging">--</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 15px;">📅 Next Event</h3>
+      <div class="event-box">
+        <div style="font-size: 1.3em; margin-bottom: 10px;" id="event">--</div>
+        <div class="countdown" id="countdown">--</div>
+        <div style="opacity: 0.7; margin-top: 5px;">minutes</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 15px;">🔔 Actions</h3>
+      <button onclick="sendNotification()">Send Notification</button>
+      <button onclick="testAlarm()">Test Alarm</button>
+      <div id="notifyStatus"></div>
+    </div>
+  </div>
+
+  <script>
+    function updateStatus() {
+      fetch('/api/status')
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('battery').innerText = data.battery + '%';
+          document.getElementById('charging').innerText = data.charging ? '🔌' : '🔋';
+          document.getElementById('event').innerText = data.nextEvent;
+          document.getElementById('countdown').innerText = data.countdown;
+        });
+    }
+
+    function sendNotification() {
+      fetch('/api/notify?title=Meeting%20Alert&body=Team%20meeting%20starts%20soon')
+        .then(() => {
+          document.getElementById('notifyStatus').innerHTML = 
+            '<div class="notification">✅ Notification sent!</div>';
+          setTimeout(() => { document.getElementById('notifyStatus').innerHTML = ''; }, 3000);
+        });
+    }
+
+    function testAlarm() {
+      fetch('/api/alarm')
+        .then(() => {
+          document.getElementById('notifyStatus').innerHTML = 
+            '<div class="notification">🔔 Alarm triggered!</div>';
+          setTimeout(() => { document.getElementById('notifyStatus').innerHTML = ''; }, 3000);
+        });
+    }
+
+    // Update every 5 seconds
+    updateStatus();
+    setInterval(updateStatus, 5000);
+  </script>
+</body>
+</html>
