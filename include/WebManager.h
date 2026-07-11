@@ -29,4 +29,7 @@ bool hasWiFiConfig();
 // Display WiFi connection status on TFT screen
 void displayWiFiStatus();
 
+// Record a device event for API consumers
+void recordEvent(const char* type, const String& message);
+
 #endif // WEB_MANAGER_H

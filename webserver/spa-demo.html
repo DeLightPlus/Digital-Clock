@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iGO-Buddy Terminal</title>
+  <link rel="stylesheet" href="spa-demo.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-badge">iGO</div>
+      <div>
+        <div class="brand-title">iGO-Buddy Control Terminal</div>
+        <div class="muted">ESP32 Smart Clock • WiFi • BT • REST API</div>
+      </div>
+    </div>
+    <div class="pill" id="status-pill">● READY</div>
+  </header>
+
+  <main>
+    <nav id="nav"></nav>
+    <div id="views"></div>
+  </main>
+
+  <footer>
+    <span id="footer-ip">192.168.4.1</span> • 
+    <span id="footer-uptime">Uptime: 0s</span> • 
+    <span>ESP32-D0WD-V3</span>
+  </footer>
+  <script src="spa-demo.js"></script>
+</body>
+</html>

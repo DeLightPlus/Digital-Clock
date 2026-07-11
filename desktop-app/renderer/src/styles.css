@@ -1,0 +1,152 @@
+:root {
+  color-scheme: light;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  background: #0b0f11;
+  color: #dff7d7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #101820, #06080a 55%);
+}
+
+.app {
+  min-height: 100vh;
+  padding: 32px;
+  display: grid;
+  gap: 24px;
+}
+
+.app__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid #1a2a2e;
+  padding-bottom: 16px;
+}
+
+.app__title {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.app__subtitle {
+  color: #9fb8a4;
+  margin-top: 6px;
+}
+
+.app__meta {
+  display: grid;
+  gap: 4px;
+  text-align: right;
+  font-size: 14px;
+  color: #7aa48a;
+}
+
+.panel {
+  background: #10161a;
+  border: 1px solid #1e2a2f;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.panel__row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.panel__actions {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.panel--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.label {
+  font-size: 14px;
+  color: #7aa48a;
+}
+
+.value {
+  font-weight: 600;
+}
+
+.pill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: #1a2f2a;
+  border: 1px solid #2a4a3f;
+}
+
+.pill--wifi {
+  background: #143824;
+  border-color: #2f6b4b;
+}
+
+.pill--ble {
+  background: #2a1f10;
+  border-color: #8a642b;
+}
+
+.pill--fallback {
+  background: #2a1318;
+  border-color: #88414f;
+}
+
+.button {
+  border: none;
+  background: #1f5f3f;
+  color: #e6ffe9;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.button.ghost {
+  background: transparent;
+  border: 1px solid #2a3a3f;
+  color: #9fb8a4;
+}
+
+.note {
+  color: #8fb39c;
+  margin: 0;
+}
+
+h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #9fb8a4;
+}
+
+@media (max-width: 720px) {
+  .app {
+    padding: 20px;
+  }
+
+  .app__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}

@@ -38,13 +38,11 @@ The system consists of embedded firmware on the device and companion clients (de
 ## 3. API Requirements (Local HTTP)
 Endpoints (base /api):
 - GET /clock
-- GET /settings
-- POST /settings/time-format
-- POST /settings/date-format
-- POST /alarm/add
+- GET/POST /settings
+- GET/POST /alarm/add
 - POST /alarm/delete
 - GET /alarm/list
-- POST /timer/set
+- GET/POST /timer/set
 - POST /timer/start
 - POST /timer/stop
 - GET /timer/status
@@ -54,9 +52,8 @@ Endpoints (base /api):
 - POST /stopwatch/lap
 - GET /stopwatch/status
 - GET /wifi/scan
-- POST /wifi/configure
-- POST /wifi/reset
-- POST /pair/complete
+- POST /wifi/connect
+- POST /wifi/clear
 - GET /status
 
 ## 4. Data Model (Core)

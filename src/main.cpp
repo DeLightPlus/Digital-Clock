@@ -16,6 +16,7 @@
 #include "rtc_time.h"
 #include "leds.h"
 #include "WebManager.h"
+#include "ControlManager.h"
 
 // Shared state variable for notifications
 String lastNotification = "";
@@ -30,6 +31,7 @@ void setup() {
   initRTC();
   initLEDs();
   initClockManager();
+  initControlManager();
   
   // Initialize display settings (time/date format preferences)
   initDisplaySettings();
@@ -63,6 +65,9 @@ void setup() {
 void loop() {
   // Clock manager handles timing and display updates
   updateClock();
+
+  // Timing for alarms/timer/stopwatch
+  updateControlManager();
   
   // Update LED breathing animation
   updateLEDs();

@@ -1,10 +1,28 @@
 #ifndef WIFI_PROVISIONING_H
 #define WIFI_PROVISIONING_H
 
-// WiFi Provisioning Settings Page
-// Minified version - see webserver/settings.html for full source
+// WiFi Setup page now points users to the SPA WiFi section
 const char HTML_SETTINGS[] PROGMEM = R"rawliteral(
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WiFi Setup</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}.container{background:#fff;border-radius:15px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:500px;width:100%;padding:30px}.header{text-align:center;margin-bottom:30px}.header h1{color:#667eea;font-size:28px;margin-bottom:10px}.header p{color:#999;font-size:14px}.form-group{margin-bottom:20px}label{display:block;color:#333;font-weight:600;margin-bottom:8px;font-size:14px}input{width:100%;padding:12px 15px;border:2px solid #e0e0e0;border-radius:8px;font-size:14px}input:focus{outline:0;border-color:#667eea}.network-list{max-height:200px;overflow-y:auto;border:2px solid #e0e0e0;border-radius:8px;margin-bottom:15px}.network-item{padding:12px 15px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between}.network-item:hover{background:#f8f9fa}.network-item.selected{background:#667eea;color:#fff}.signal-strength{font-size:12px;opacity:.7}button{width:100%;padding:14px 20px;font-size:14px;font-weight:600;border:0;border-radius:8px;cursor:pointer;margin-top:10px}.btn-primary{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}.btn-secondary{background:#f0f0f0;color:#333}.status{margin-top:20px;padding:12px;border-radius:8px;text-align:center;display:none}.status.success{background:#d4edda;color:#155724}.status.error{background:#f8d7da;color:#721c24}.status.info{background:#d1ecf1;color:#0c5460}.loading{text-align:center;padding:20px;color:#999}</style></head><body><div class="container"><div class="header"><h1>📶 WiFi Setup</h1><p>Configure iGO-Buddy Network</p></div><div class="form-group"><label>Available Networks</label><button class="btn-secondary" onclick="scanNetworks()">Scan for Networks</button><div class="network-list" id="networkList"><div class="loading">Click "Scan for Networks"</div></div></div><div class="form-group"><label for="ssid">WiFi Network Name</label><input type="text" id="ssid" placeholder="Enter network name"></div><div class="form-group"><label for="password">WiFi Password</label><input type="password" id="password" placeholder="Enter password"></div><div class="form-group"><label for="apName">iGO-Buddy AP Name</label><input type="text" id="apName" value="iGO-Buddy"></div><button class="btn-primary" onclick="saveWiFiConfig()">Save & Restart</button><button class="btn-secondary" onclick="clearConfig()">Clear WiFi</button><div class="status" id="status"></div></div><script>function scanNetworks(){const list=document.getElementById('networkList');list.innerHTML='<div class="loading">Scanning...</div>';fetch('/api/wifi/scan').then(r=>r.json()).then(data=>{if(data.networks&&data.networks.length>0){list.innerHTML='';data.networks.forEach(network=>{const item=document.createElement('div');item.className='network-item';item.innerHTML=`<span>${network.ssid}</span><span class="signal-strength">${network.rssi} dBm</span>`;item.onclick=()=>selectNetwork(network.ssid,item);list.appendChild(item)})}else{list.innerHTML='<div class="loading">No networks found</div>'}}).catch(e=>{list.innerHTML='<div class="loading">Scan failed</div>'})}function selectNetwork(ssid,el){document.querySelectorAll('.network-item').forEach(item=>item.classList.remove('selected'));el.classList.add('selected');document.getElementById('ssid').value=ssid}function saveWiFiConfig(){const ssid=document.getElementById('ssid').value;const password=document.getElementById('password').value;const apName=document.getElementById('apName').value||'iGO-Buddy';if(!ssid){showStatus('Please enter WiFi network name','error');return}showStatus('Saving configuration...','info');fetch('/api/wifi/configure',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ssid:ssid,password:password,ap_name:apName})}).then(r=>r.json()).then(data=>{if(data.success){showStatus('WiFi configured! ESP32 will restart in 3 seconds...','success');setTimeout(()=>{window.location.href='/'},3000)}else{showStatus('Failed to save configuration','error')}}).catch(e=>{showStatus('Error: '+e.message,'error')})}function clearConfig(){if(!confirm('Clear all saved WiFi settings?'))return;fetch('/api/wifi/reset',{method:'POST'}).then(r=>r.json()).then(data=>{if(data.success){showStatus('WiFi settings cleared!','success');document.getElementById('ssid').value='';document.getElementById('password').value=''}}).catch(e=>{showStatus('Error: '+e.message,'error')})}function showStatus(message,type){const status=document.getElementById('status');status.textContent=message;status.className='status '+type;status.style.display='block';if(type!=='info'){setTimeout(()=>{status.style.display='none'},5000)}}window.onload=()=>{setTimeout(scanNetworks,500)}</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="refresh" content="0; url=/index.html#wifi">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>WiFi Setup Redirect</title>
+	<style>
+		body { font-family: Arial, sans-serif; background: #0b0f11; color: #b4f08b; display: grid; place-items: center; height: 100vh; margin: 0; }
+		a { color: #8be28b; }
+		.card { padding: 24px; border: 1px solid #1f2a2f; border-radius: 8px; background: #10161a; text-align: center; }
+	</style>
+</head>
+<body>
+	<div class="card">
+		<p>WiFi setup moved to the main control panel.</p>
+		<p>If you are not redirected, open <a href="/index.html#wifi">/index.html#wifi</a>.</p>
+	</div>
+</body>
+</html>
 )rawliteral";
 
 #endif // WIFI_PROVISIONING_H
